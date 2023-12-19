@@ -69,7 +69,7 @@ def handle_video(message):
                 if text:
                     extracted_text.append(text)
 
-        # Release the video capture object
+        # Release the video capture object outside the loop
         cap.release()
 
         # Check if extracted_text is empty
@@ -86,3 +86,4 @@ def handle_video(message):
 
 # Start the bot
 bot.polling()
+
