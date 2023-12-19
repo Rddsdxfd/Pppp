@@ -72,8 +72,12 @@ def handle_video(message):
         # Release the video capture object
         cap.release()
 
-        # Send the extracted text to the user
-        bot.send_message(message.chat.id, '\n'.join(extracted_text))
+        # Check if extracted_text is empty
+        if not extracted_text:
+            bot.send_message(message.chat.id, "No text was found in the video.")
+        else:
+            # Send the extracted text to the user
+            bot.send_message(message.chat.id, '\n'.join(extracted_text))
 
     except Exception as e:
         # Send a detailed error message with the exception information
@@ -82,3 +86,4 @@ def handle_video(message):
 
 # Start the bot
 bot.polling()
+                
