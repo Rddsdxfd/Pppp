@@ -28,20 +28,25 @@ def handle_video(message):
 
         cap = cv2.VideoCapture(temp_filename)
         extracted_text = []
+        frame_count = 0
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            # Preprocess the frame here, if necessary
+            # Process every 25th frame
+            if frame_count % 25 == 0:
+                # Preprocess the frame here, if necessary
 
-            # Consider adding frame resizing if the frames are large
-            # to speed up processing and decrease memory usage
+                # Consider adding frame resizing if the frames are large
+                # to speed up processing and decrease memory usage
 
-            text = pytesseract.image_to_string(frame, lang='rus')  # Change to the correct language if not 'rus'
-            if text.strip():  # Checks if text is non-empty and not just whitespace
-                extracted_text.append(text.strip())
+                text = pytesseract.image_to_string(frame, lang='rus')  # Change to the correct language if not 'rus'
+                if text.strip():  # Checks if text is non-empty and not just whitespace
+                    extracted_text.append(text.strip())
+
+            frame_count += 1
 
         cap.release()
         os.unlink(temp_filename)  # Delete the temporary file
