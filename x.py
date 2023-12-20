@@ -27,9 +27,8 @@ def handle_video(message):
             temp_filename = temp_file.name
 
         cap = cv2.VideoCapture(temp_filename)
-        extracted_text = []
+        extracted_text = set()  # Use a set to store unique text fragments
         frame_count = 0
-        seen_word_combinations = set()
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -47,17 +46,12 @@ def handle_video(message):
                 # to speed up processing and decrease memory usage
 
                 text = pytesseract.image_to_string(edges, lang='rus')  # Change to the correct language if not 'rus'
-                if text.strip():  # Checks if text is non-empty and not just whitespace
-                    # Split the text into words
-                    words = text.split()
+                cleaned_text = text.strip()
 
-                    # Create a word combination by joining the first two words
-                    word_combination = ' '.join(words[:2])
-
-                    # Check if the word combination has been seen before
-                    if word_combination not in seen_word_combinations:
-                        seen_word_combinations.add(word_combination)
-                        extracted_text.append(text.strip())
+                if cleaned_text:  # Checks if text is non-empty and not just whitespace
+                    # Check if the cleaned text is not already in the set
+                    if cleaned_text not in extracted_text:
+                        extracted_text.add(cleaned_text)
 
             frame_count += 1
 
@@ -65,14 +59,14 @@ def handle_video(message):
         os.unlink(temp_filename)  # Delete the temporary file
 
         if not extracted_text:
-            bot.send_message(message.chat.id, "No text was found in the video.")
+            bot.send_message(message.chat.id, "No unique text was found in the video.")
         else:
             # Post-process the extracted text
-            extracted_text = ' '.join(extracted_text)  # Join all the text fragments into a single string
-            extracted_text = re.sub(r'[^а-яА-ЯёЁa-zA-Z0-9\s]', '', extracted_text)  # Remove non-alphanumeric characters
-            extracted_text = re.sub(r'\s+', ' ', extracted_text)  # Remove extra whitespace
+            result_text = ' '.join(extracted_text)
+            result_text = re.sub(r'[^а-яА-ЯёЁa-zA-Z0-9\s]', '', result_text)  # Remove non-alphanumeric characters
+            result_text = re.sub(r'\s+', ' ', result_text)  # Remove extra whitespace
 
-            bot.send_message(message.chat.id, extracted_text)
+            bot.send_message(message.chat.id, result_text)
     except Exception as e:
         error_message = f"An error occurred while processing the video. Error details: {str(e)}"
         bot.send_message(message.chat.id, error_message)
@@ -81,3 +75,4 @@ def handle_video(message):
 
 # Start bot polling
 bot.polling(non_stop=True, interval=0)
+                                         
