@@ -1,12 +1,13 @@
-import telebot
-from telebot import types
+import os
+from telebot import TeleBot, types
 import cv2
 import numpy as np
 import pytesseract
 import re
 
-# Create a Telebot object
-bot = telebot.TeleBot("6503263167:AAFLTBgytJpQ4FegGlUI2qGaHaHrXFL9rs8")
+# Create a TeleBot object
+bot_token = os.getenv("6503263167:AAFLTBgytJpQ4FegGlUI2qGaHaHrXFL9rs8") # Get the bot token from an environment variable
+bot = TeleBot(bot_token) # Use the bot token as an argument
 
 # Define the command handler for '/start'
 @bot.message_handler(commands=['start'])
@@ -22,11 +23,13 @@ def handle_video(message):
         file_info = bot.get_file(message.video.file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        # Convert the downloaded file to a NumPy array
-        nparr = np.frombuffer(downloaded_file, np.uint8)
+        # Check if the video is too large
+        if file_info.file_size > 10 * 1024 * 1024:
+            bot.send_message(message.chat.id, "The video is too large. Please send a video that is less than 10 MB.")
+            return
 
-        # Create a VideoCapture object from the decoded array
-        cap = cv2.VideoCapture(cv2.imdecode(nparr, cv2.IMREAD_COLOR))
+        # Create a VideoCapture object from the file path
+        cap = cv2.VideoCapture(file_info.file_path) # Use the file path as an argument
 
         # Initialize an empty list to store the extracted text
         extracted_text = []
@@ -81,3 +84,4 @@ def handle_video(message):
 
 # Start the bot
 bot.polling()
+            
