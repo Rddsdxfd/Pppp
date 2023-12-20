@@ -22,11 +22,6 @@ def handle_video(message):
         file_info = bot.get_file(message.video.file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        # Check if the video is too large
-        if file_info.file_size > 10 * 1024 * 1024:
-            bot.send_message(message.chat.id, "The video is too large. Please send a video that is less than 10 MB.")
-            return
-
         # Convert the downloaded file to a NumPy array
         nparr = np.frombuffer(downloaded_file, np.uint8)
 
@@ -69,7 +64,7 @@ def handle_video(message):
                 if text:
                     extracted_text.append(text)
 
-        # Release the video capture object outside the loop
+        # Release the video capture object
         cap.release()
 
         # Check if extracted_text is empty
@@ -86,4 +81,3 @@ def handle_video(message):
 
 # Start the bot
 bot.polling()
-
