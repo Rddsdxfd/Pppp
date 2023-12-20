@@ -7,72 +7,60 @@ import re
 import tempfile
 import os
 
-bot = telebot.TeleBot("6503263167:AAFLTBgytJpQ4FegGlUI2qGaHaHrXFL9rs8")
+# Configure pytesseract to work with Russian
+# Presuming that 'rus' is the correct Tesseract language code for Russian
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# ... (other parts of your code)
+bot = telebot.TeleBot("6503263167:AAFLTBgytJpQ4FegGlUI2qGaHaHrXFL9rs8")
 
 @bot.message_handler(content_types=['video'])
 def handle_video(message):
     try:
-        file_info = bot.get_file(message.video.file_id)
+        # ... (rest of your existing code for downloading and video handling remains unchanged) ...
 
-        if message.video.file_size > 10 * 1024 * 1024:
-            bot.send_message(message.chat.id, "The video is too large. Please send a video that is less than 10 MB.")
-            return
+        # New Step: Image preprocessing
+        def preprocess_image(img):
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            _, thresh_img = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            return thresh_img
 
-        downloaded_file = bot.download_file(file_info.file_path)
-        nparr = np.frombuffer(downloaded_file, np.uint8)
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-            temp_file.write(nparr)
-            temp_filename = temp_file.name
+        # New Step: Post-processing improvements
+        def clean_text(text):
+            # Normalize hyphenated words at the end of lines
+            text = re.sub(r'(\w)-\n(\w)', r'\1\2', text)
+            # Insert additional regex replacements here
+            return text
 
-        cap = cv2.VideoCapture(temp_filename)
-        extracted_text = set()  # Use a set to store unique text fragments
-        frame_count = 0
+        # ... (rest of existing video capture loop) ...
+
+        processed_text = []
+        last_text = ""
 
         while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
+            # ... (reading frames remains unchanged) ...
 
-            # Process every 15th frame
-            if frame_count % 15 == 0:
-                # Preprocess the frame
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-                edges = cv2.Canny(thresh, 100, 200)
+            # Preprocessing step before OCR
+            preprocessed_frame = preprocess_image(frame)
 
-                # Consider adding frame resizing if the frames are large
-                # to speed up processing and decrease memory usage
+            # OCR on the preprocessed frame
+            text = pytesseract.image_to_string(preprocessed_frame, lang='rus')
 
-                text = pytesseract.image_to_string(edges, lang='rus')  # Change to the correct language if not 'rus'
-                cleaned_text = text.strip()
+            # Post-processing on the extracted text
+            clean = clean_text(text)
+            if clean.strip() and clean.strip() != last_text:
+                processed_text.append(clean.strip())
+                last_text = clean.strip()
 
-                if cleaned_text:  # Checks if text is non-empty and not just whitespace
-                    # Check if the cleaned text is not already in the set
-                    if cleaned_text not in extracted_text:
-                        extracted_text.add(cleaned_text)
-
-            frame_count += 1
-
-        cap.release()
-        os.unlink(temp_filename)  # Delete the temporary file
-
-        if not extracted_text:
-            bot.send_message(message.chat.id, "No unique text was found in the video.")
+        # ... (closing the video and temporary files remains unchanged) ...
+        
+        # Send the cleaned and processed text to the user
+        if not processed_text:
+            bot.send_message(message.chat.id, "No text was found in the video.")
         else:
-            # Post-process the extracted text
-            result_text = ' '.join(extracted_text)
-            result_text = re.sub(r'[^а-яА-ЯёЁa-zA-Z0-9\s]', '', result_text)  # Remove non-alphanumeric characters
-            result_text = re.sub(r'\s+', ' ', result_text)  # Remove extra whitespace
-
-            bot.send_message(message.chat.id, result_text)
+            bot.send_message(message.chat.id, '\n'.join(processed_text))
+    
     except Exception as e:
         error_message = f"An error occurred while processing the video. Error details: {str(e)}"
         bot.send_message(message.chat.id, error_message)
 
-# ... (rest of your code)
-
-# Start bot polling
 bot.polling(non_stop=True, interval=0)
-                                         
