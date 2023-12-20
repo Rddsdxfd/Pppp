@@ -7,7 +7,7 @@ import re
 import tempfile
 import os
 
-bot = telebot.TeleBot("YOUR_TELEGRAM_BOT_TOKEN")
+bot = telebot.TeleBot("6503263167:AAFLTBgytJpQ4FegGlUI2qGaHaHrXFL9rs8")
 
 @bot.message_handler(content_types=['video'])
 def handle_video(message):
