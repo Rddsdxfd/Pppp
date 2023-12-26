@@ -23,8 +23,10 @@ def handle_video(message):
             audio.write_audiofile("audio.wav")
 
         upload_response = upload_audio("audio.wav")
-        transcript_id = upload_response["id"]
+transcript_id = upload_response["upload"]["id"] 
 
+poller = Poller(API_KEY, transcript_id)
+# rest of code...
         poller = Poller(API_KEY, transcript_id)
         transcript = poller.poll_for_transcription()
         
